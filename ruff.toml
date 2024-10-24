@@ -1,0 +1,7 @@
+# Extend the default exclude list of commonly ignored directories.
+extend-exclude = [".vscode"]
+line-length = 300
+
+[lint]
+select = ["E", "F", "I"]
+fixable = ["ALL"]

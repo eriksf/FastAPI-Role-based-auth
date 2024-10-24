@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from core.database import SessionLocal, engine
-from sqladmin import Admin, ModelView
-from auth import auth, functions, models, schemas
+import uvicorn
+from fastapi import FastAPI
+from sqladmin import Admin
+
+from auth import auth, models
+from core.database import engine
+
 from .admin import UserAdmin
 
 models.Base.metadata.create_all(bind=engine)
@@ -24,3 +26,11 @@ admin.add_view(UserAdmin)
 async def read_home_page():
     return {"msg": "Initialization done"}
 
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "core.main:app",
+        host="0.0.0.0",
+        port=8000,
+        log_level="debug",
+        reload=True)

@@ -1,10 +1,13 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status
-from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import Session
+from datetime import timedelta
 from typing import Annotated
-from auth import schemas, functions
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from auth import functions, schemas
 from core.dependencies import get_db, oauth2_scheme
-from core import main
+from core.main import ACCESS_TOKEN_EXPIRE_MINUTES
+
 from .dependencies import RoleChecker
 
 router = APIRouter(
@@ -32,7 +35,7 @@ async def create_new_user(user: schemas.UserCreate, db: Session = Depends(get_db
             response_model=list[schemas.User],
             dependencies=[Depends(RoleChecker(['admin']))]
             )
-async def read_all_user( skip: int = 0, limit: int = 100,  db: Session = Depends(get_db)):
+async def read_all_users( skip: int = 0, limit: int = 100,  db: Session = Depends(get_db)):
     return functions.read_all_user(db, skip, limit)
 
 # get user by id 
@@ -40,7 +43,7 @@ async def read_all_user( skip: int = 0, limit: int = 100,  db: Session = Depends
             response_model=schemas.User,
             dependencies=[Depends(RoleChecker(['admin']))]
             )
-async def read_all_user( user_id: int, db: Session = Depends(get_db)):
+async def read_user_by_id( user_id: int, db: Session = Depends(get_db)):
     return functions.get_user_by_id(db, user_id)
 
 # update user
@@ -48,7 +51,7 @@ async def read_all_user( user_id: int, db: Session = Depends(get_db)):
               response_model=schemas.User,
               dependencies=[Depends(RoleChecker(['admin']))]
               )
-async def update_user( user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
+async def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
     print(f"Received data: {user.model_dump()}")
     return functions.update_user(db, user_id, user)
 
@@ -57,7 +60,7 @@ async def update_user( user_id: int, user: schemas.UserUpdate, db: Session = Dep
                response_model=schemas.User,
                dependencies=[Depends(RoleChecker(['admin']))]
                )
-async def update_user( user_id: int, db: Session = Depends(get_db)):
+async def delete_user(user_id: int, db: Session = Depends(get_db)):
     return functions.delete_user(db, user_id)
 
 
@@ -75,7 +78,7 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=main.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = functions.create_access_token(
         data={"id": member.id, "email": member.email, "role": member.role}, expires_delta=access_token_expires
     )
