@@ -1,18 +1,18 @@
-from fastapi import HTTPException, status, Depends
-from sqlalchemy.orm import Session
-from auth import models, schemas
-from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
-from fastapi.encoders import jsonable_encoder
 from typing import Annotated
 
-from core import main
+from fastapi import Depends, HTTPException, status
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from auth import models, schemas
 from core import dependencies
+from core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# get user by email 
+# get user by email
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
@@ -23,7 +23,7 @@ def get_user_by_id(db: Session, user_id: int):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-# crete new user 
+# crete new user
 def create_new_user(db: Session, user:schemas.UserCreate):
     hashed_password = pwd_context.hash(user.password)
     new_user = models.User(email=user.email, password=hashed_password)
@@ -32,7 +32,7 @@ def create_new_user(db: Session, user:schemas.UserCreate):
     db.refresh(new_user)
     return new_user
 
-# get all user 
+# get all user
 def read_all_user(db: Session, skip: int, limit: int):
     return db.query(models.User).offset(skip).limit(limit).all()
 
@@ -74,10 +74,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, main.SECRET_KEY, algorithm=main.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
-# get current users info 
+# get current users info
 def get_current_user(token: Annotated[str, Depends(dependencies.oauth2_scheme)], db: Annotated[Session, Depends(dependencies.get_db)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -85,7 +85,7 @@ def get_current_user(token: Annotated[str, Depends(dependencies.oauth2_scheme)],
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, main.SECRET_KEY, algorithms=[main.ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         # print(f"Payload =====> {payload}")
         current_email: str = payload.get("email")
         if current_email is None:

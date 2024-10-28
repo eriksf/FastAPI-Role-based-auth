@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import Depends, HTTPException
+
 import auth
+
 
 # Role based access control
 class RoleChecker:

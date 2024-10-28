@@ -1,6 +1,8 @@
 from fastapi import FastAPI
-from sqladmin import Admin, ModelView
+from sqladmin import ModelView
+
 from auth.models import User
+
 app = FastAPI()
 
 

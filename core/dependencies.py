@@ -1,10 +1,7 @@
-from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated
-from sqlalchemy.orm import Session
-from jose import JWTError, jwt
 
-from core.database import SessionLocal, engine
+from core.database import SessionLocal
+
 
 # db connection
 def get_db():
@@ -14,7 +11,7 @@ def get_db():
 	finally:
 		db.close()
 
-# authorization 
+# authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 

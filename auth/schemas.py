@@ -1,6 +1,10 @@
-from pydantic import BaseModel
 from datetime import datetime
-from auth import models
+from typing import Optional
+
+from pydantic import BaseModel
+
+from auth.models import UserRole
+
 
 class UserBase(BaseModel):
 	email: str
@@ -11,15 +15,15 @@ class UserCreate(UserBase):
 class User(UserCreate):
 	id: int
 	is_active: bool
-	role: models.UserRole or None
+	role: Optional[UserRole] = None
 	created_at: datetime
 	updated_at: datetime
 	class Config:
-		orm_mode = True
+		from_attributes = True
 
 class UserUpdate(BaseModel):
 	is_active: bool
-	role: models.UserRole or None
+	role: Optional[UserRole] = None
 
 class Token(BaseModel):
     access_token: str

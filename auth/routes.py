@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from auth import functions, schemas
+from core.config import settings
 from core.dependencies import get_db, oauth2_scheme
-from core.main import ACCESS_TOKEN_EXPIRE_MINUTES
 
 from .dependencies import RoleChecker
 
 router = APIRouter(
-    prefix="/auth", 
+    prefix="/auth",
     tags=["auth"],  #tags
     responses={404: {"description": "Not found"}},
 )
@@ -21,7 +21,7 @@ router = APIRouter(
 async def read_auth_page(token: Annotated[str, Depends(oauth2_scheme)]):
     return {"msg": "Auth page Initialization done"}
 
-# create new user 
+# create new user
 @router.post('/users', response_model=schemas.User)
 async def create_new_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = functions.get_user_by_email(db, user.email)
@@ -30,16 +30,16 @@ async def create_new_user(user: schemas.UserCreate, db: Session = Depends(get_db
     new_user = functions.create_new_user(db, user)
     return new_user
 
-# get all user 
-@router.get('/users', 
+# get all user
+@router.get('/users',
             response_model=list[schemas.User],
             dependencies=[Depends(RoleChecker(['admin']))]
             )
 async def read_all_users( skip: int = 0, limit: int = 100,  db: Session = Depends(get_db)):
     return functions.read_all_user(db, skip, limit)
 
-# get user by id 
-@router.get('/users/{user_id}', 
+# get user by id
+@router.get('/users/{user_id}',
             response_model=schemas.User,
             dependencies=[Depends(RoleChecker(['admin']))]
             )
@@ -47,7 +47,7 @@ async def read_user_by_id( user_id: int, db: Session = Depends(get_db)):
     return functions.get_user_by_id(db, user_id)
 
 # update user
-@router.patch('/users/{user_id}', 
+@router.patch('/users/{user_id}',
               response_model=schemas.User,
               dependencies=[Depends(RoleChecker(['admin']))]
               )
@@ -56,7 +56,7 @@ async def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depe
     return functions.update_user(db, user_id, user)
 
 # delete user
-@router.delete('/users/{user_id}', 
+@router.delete('/users/{user_id}',
                response_model=schemas.User,
                dependencies=[Depends(RoleChecker(['admin']))]
                )
@@ -65,7 +65,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 
 # ============> login/logout < ======================
-# getting access token for login 
+# getting access token for login
 @router.post("/login", response_model=schemas.Token)
 async def login_for_access_token(
     user: schemas.UserCreate,
@@ -78,14 +78,14 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = functions.create_access_token(
         data={"id": member.id, "email": member.email, "role": member.role}, expires_delta=access_token_expires
     )
     return schemas.Token(access_token=access_token, token_type="bearer")
 
 
-# get curren user 
+# get curren user
 @router.get('/users/me/', response_model=schemas.User)
 async def read_current_user( current_user: Annotated[schemas.User, Depends(functions.get_current_user)]):
     return current_user
